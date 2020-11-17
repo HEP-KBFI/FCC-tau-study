@@ -70,7 +70,7 @@ def CheckIsolation(tree, i):
 
 # files
 inf = TFile('p8_ee_ZH.root')
-outf = TFile('histogram2.root', 'RECREATE')
+outf = TFile('histo_Htautau.root', 'RECREATE')
 
 # histogram settings
 title = 'mass (GeV)'
