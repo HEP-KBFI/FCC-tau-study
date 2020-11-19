@@ -4,34 +4,35 @@
 from ROOT import TFile, TH1D, TLorentzVector
 import utils
 
-def FindPair(tree):
+
+def find_muon_pair(tree):
     # Find a pair of two oppositely charged muons
     muons = tree.muons
     pair = None
     n_mu = len(muons)
     for i in range(n_mu - 1):
         vector1 = utils.get_lorentz_vector(muons[i])
-        if not CheckPT(vector1):
+        if not check_pt(vector1):
             continue
-        if not CheckIsolation(tree, i):
+        if not check_isolation(tree, i):
             continue
         ch1 = muons[i].core.charge
         for j in range(i + 1, n_mu):
             vector2 = utils.get_lorentz_vector(muons[j])
-            if not CheckPT(vector2):
+            if not check_pt(vector2):
                 continue
-            if not CheckIsolation(tree, j):
+            if not check_isolation(tree, j):
                 continue
             ch2 = muons[j].core.charge
             if ch1 * ch2 < 0:
                 pair = {
-                    muons[i]: vector1, 
+                    muons[i]: vector1,
                     muons[j]: vector2
                 }
     return pair
 
 
-def CheckPT(vector):
+def check_pt(vector):
     # Check whether the transverse momentum of corresponding to a given Lorentz vector is over 15 GeV
     pT = vector.Perp()
     if pT > 15:
@@ -39,7 +40,7 @@ def CheckPT(vector):
     return False
 
 
-def CheckIsolation(tree, i):
+def check_isolation(tree, i):
     # Check whether muon isolation tag is below 0.4
     iso = tree.muonITags[i].tag
     if iso < 0.4:
@@ -60,15 +61,15 @@ histogram = TH1D('data', title, bins, low, high)
 
 # read events
 tree = inf.Get('events')
-ntot = tree.GetEntries()
-for event in range(ntot):
+n_tot = tree.GetEntries()
+for event in range(n_tot):
     tree.GetEntry(event)
     muon_pair = None
     if len(tree.muons) >= 2:
-        muon_pair = FindPair(tree)
+        muon_pair = find_muon_pair(tree)
     if not muon_pair:
         continue
     mass = utils.calculate_mass(muon_pair)
-    histogram.Fill(mass) 
+    histogram.Fill(mass)
 
 outf.Write()

@@ -4,23 +4,24 @@
 from ROOT import TFile, TH1D, TLorentzVector
 import utils
 
-def FindJetPair(tree):
+
+def find_jet_pair(tree):
     # Find a pair of two tau jets
     jets = tree.jets
-    tautags = tree.tauTags
+    tau_tags = tree.tauTags
     pair = None
     n_jets = len(jets)
     for i in range(n_jets - 1):
-        if tautags[i].tag < 0.5:
+        if tau_tags[i].tag < 0.5:
             continue
         vector1 = utils.get_lorentz_vector(jets[i])
-        if not CheckPT(vector1):
+        if not check_pt(vector1):
             continue
         for j in range(i + 1, n_jets):
-            if tautags[j].tag < 0.5:
+            if tau_tags[j].tag < 0.5:
                 continue
             vector2 = utils.get_lorentz_vector(jets[j])
-            if not CheckPT(vector2):
+            if not check_pt(vector2):
                 continue
             pair = {
                 jets[i]: vector1,
@@ -29,7 +30,7 @@ def FindJetPair(tree):
     return pair
 
 
-def CheckPT(vector):
+def check_pt(vector):
     # Check whether the transverse momentum of corresponding to a given Lorentz vector is over 30 GeV
     pT = vector.Perp()
     if pT > 30:
@@ -46,12 +47,12 @@ histogram = TH1D('data', 'mass (GeV)', 15, 75, 175)
 
 # read events
 tree = inf.Get('events')
-ntot = tree.GetEntries()
-for event in range(ntot):
+n_tot = tree.GetEntries()
+for event in range(n_tot):
     tree.GetEntry(event)
     jet_pair = None
     if len(tree.jets) >= 2:
-        jet_pair = FindJetPair(tree)
+        jet_pair = find_jet_pair(tree)
     if not jet_pair:
         continue
     mass = utils.calculate_mass(jet_pair)

@@ -12,8 +12,8 @@ histogram = TH1D('deltaR', 'deltaR', 100, 0, 1)
 
 # read events
 tree = inf.Get('events')
-ntot = tree.GetEntries()
-for event in range(ntot):
+n_tot = tree.GetEntries()
+for event in range(n_tot):
     tree.GetEntry(event)
 
     # get tau tagged jets
