@@ -15,12 +15,16 @@ def find_jet_pair(tree):
         if tau_tags[i].tag < 0.5:
             continue
         vector1 = utils.get_lorentz_vector(jets[i])
+        if not check_deltaR(vector1, tree):
+            continue
         if not utils.check_pt(vector1, 30):
             continue
         for j in range(i + 1, n_jets):
             if tau_tags[j].tag < 0.5:
                 continue
             vector2 = utils.get_lorentz_vector(jets[j])
+            if not check_deltaR(vector2, tree):
+                continue
             if not utils.check_pt(vector2, 30):
                 continue
             pair = {
@@ -28,6 +32,18 @@ def find_jet_pair(tree):
                 jets[j]: vector2
             }
     return pair
+
+
+def check_deltaR(vector, tree):
+    # compares delta R w.r.t. MC taus
+    mc_particles = tree.skimmedGenParticles
+    for particle in mc_particles:
+        pdg = particle.core.pdgId
+        if abs(pdg) == 15:
+            deltaR = vector.DeltaR(utils.get_lorentz_vector(particle))
+            if deltaR < 0.05:
+                return True
+    return False
 
 
 # files
