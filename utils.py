@@ -15,6 +15,18 @@ def get_lorentz_vector(particle):
     return vector
 
 
+def calculate_mass(particles):
+    # Calculate invariant mass
+    vectors = list(particles.values())
+    for i, vector in enumerate(vectors):
+        if i == 0:
+            sum_vector = vector
+        else:
+            sum_vector += vector
+    mass = sum_vector.M()
+    return mass
+
+
 
 # class Particle:
 #     def __init__(self, data):

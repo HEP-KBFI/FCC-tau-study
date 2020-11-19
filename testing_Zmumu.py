@@ -2,6 +2,7 @@
 # Z->mumu
 
 from ROOT import TFile, TH1D, TLorentzVector
+import utils
 
 def FindPair(tree):
     # Find a pair of two oppositely charged muons
@@ -9,14 +10,14 @@ def FindPair(tree):
     pair = None
     n_mu = len(muons)
     for i in range(n_mu - 1):
-        vector1 = GetLorentzVector(muons[i])
+        vector1 = utils.get_lorentz_vector(muons[i])
         if not CheckPT(vector1):
             continue
         if not CheckIsolation(tree, i):
             continue
         ch1 = muons[i].core.charge
         for j in range(i + 1, n_mu):
-            vector2 = GetLorentzVector(muons[j])
+            vector2 = utils.get_lorentz_vector(muons[j])
             if not CheckPT(vector2):
                 continue
             if not CheckIsolation(tree, j):
@@ -28,25 +29,6 @@ def FindPair(tree):
                     muons[j]: vector2
                 }
     return pair
-
-
-def CalculateMass(muons):
-    # Calculate invariant mass of muon pair
-    vectors = list(muons.values())
-    mass = (vectors[0] + vectors[1]).M()
-    return mass
-
-
-def GetLorentzVector(muon):
-    # Get the Lorentz Vector of a given muon
-    vector = TLorentzVector()
-    vector.SetXYZM(
-        muon.core.p4.px,
-        muon.core.p4.py,
-        muon.core.p4.px,
-        muon.core.p4.mass
-    )
-    return vector
 
 
 def CheckPT(vector):
@@ -86,7 +68,7 @@ for event in range(ntot):
         muon_pair = FindPair(tree)
     if not muon_pair:
         continue
-    mass = CalculateMass(muon_pair)
+    mass = utils.calculate_mass(muon_pair)
     histogram.Fill(mass) 
 
 outf.Write()
