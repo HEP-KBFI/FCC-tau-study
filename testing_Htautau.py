@@ -15,27 +15,19 @@ def find_jet_pair(tree):
         if tau_tags[i].tag < 0.5:
             continue
         vector1 = utils.get_lorentz_vector(jets[i])
-        if not check_pt(vector1):
+        if not utils.check_pt(vector1, 30):
             continue
         for j in range(i + 1, n_jets):
             if tau_tags[j].tag < 0.5:
                 continue
             vector2 = utils.get_lorentz_vector(jets[j])
-            if not check_pt(vector2):
+            if not utils.check_pt(vector2, 30):
                 continue
             pair = {
                 jets[i]: vector1,
                 jets[j]: vector2
             }
     return pair
-
-
-def check_pt(vector):
-    # Check whether the transverse momentum of corresponding to a given Lorentz vector is over 30 GeV
-    pT = vector.Perp()
-    if pT > 30:
-        return True
-    return False
 
 
 # files
@@ -57,4 +49,6 @@ for event in range(n_tot):
         continue
     mass = utils.calculate_mass(jet_pair)
     histogram.Fill(mass)
+
+# write to file
 outf.Write()

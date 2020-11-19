@@ -27,6 +27,14 @@ def calculate_mass(particles):
     return mass
 
 
+def check_pt(vector, limit):
+    # Check whether the transverse momentum corresponding to a given Lorentz vector is over the given limit (GeV)
+    pT = vector.Perp()
+    if pT > limit:
+        return True
+    return False
+
+
 
 # class Particle:
 #     def __init__(self, data):

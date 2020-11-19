@@ -12,14 +12,14 @@ def find_muon_pair(tree):
     n_mu = len(muons)
     for i in range(n_mu - 1):
         vector1 = utils.get_lorentz_vector(muons[i])
-        if not check_pt(vector1):
+        if not utils.check_pt(vector1, 15):
             continue
         if not check_isolation(tree, i):
             continue
         ch1 = muons[i].core.charge
         for j in range(i + 1, n_mu):
             vector2 = utils.get_lorentz_vector(muons[j])
-            if not check_pt(vector2):
+            if not utils.check_pt(vector2, 15):
                 continue
             if not check_isolation(tree, j):
                 continue
@@ -30,14 +30,6 @@ def find_muon_pair(tree):
                     muons[j]: vector2
                 }
     return pair
-
-
-def check_pt(vector):
-    # Check whether the transverse momentum of corresponding to a given Lorentz vector is over 15 GeV
-    pT = vector.Perp()
-    if pT > 15:
-        return True
-    return False
 
 
 def check_isolation(tree, i):
