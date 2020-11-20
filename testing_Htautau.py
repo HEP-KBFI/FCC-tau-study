@@ -63,7 +63,7 @@ for event in range(n_tot):
         jet_pair = find_jet_pair(tree)
     if not jet_pair:
         continue
-    mass = utils.calculate_mass(jet_pair)
+    mass = utils.calculate_mass(jet_pair) + tree.met[0].magnitude
     histogram.Fill(mass)
 
 # write to file
