@@ -1,6 +1,7 @@
 # Testing different Lorentz vector functions
 
 import utils
+from math import sqrt
 from ROOT import Math, TFile, TH1D, TLorentzVector
 
 def get_lorentz_vector_new(particle):
@@ -26,8 +27,9 @@ def get_pt(vector):
     try:
         pT = vector.Perp()
     except:
-        pT = vector.Perp2()
+        pT = sqrt(vector.Perp2())
     return pT
+
 
 def find_muon_pair_new(tree):
     # Find a pair of two oppositely charged muons
@@ -162,6 +164,8 @@ for name in histogram_list:
         )
 
 # read events
+count_ok = 0
+count_nok = 0
 tree = inf.Get('events')
 n_tot = tree.GetEntries()
 for event in range(n_tot):
@@ -177,12 +181,14 @@ for event in range(n_tot):
         muon_pair_new = find_muon_pair_new(tree)
     if muon_pair_old_nofilter:
         for muon in muon_pair_old_nofilter.values():
-            histograms['old_pt_nofilter'].Fill(get_pt(muon))
+            pt_old = get_pt(muon)
+            histograms['old_pt_nofilter'].Fill(pt_old)
         mass1 = utils.calculate_mass(muon_pair_old_nofilter)
         histograms['old_mass_nofilter'].Fill(mass1)
     if muon_pair_new_nofilter:
         for muon in muon_pair_new_nofilter.values():
-            histograms['new_pt_nofilter'].Fill(get_pt(muon))
+            pt_new = get_pt(muon)
+            histograms['new_pt_nofilter'].Fill(pt_new)
         mass2 = utils.calculate_mass(muon_pair_new_nofilter)
         histograms['new_mass_nofilter'].Fill(mass2)
     if muon_pair_old:
@@ -195,5 +201,12 @@ for event in range(n_tot):
             histograms['new_pt'].Fill(get_pt(muon))
         mass4 = utils.calculate_mass(muon_pair_new)
         histograms['new_mass'].Fill(mass4)
+    if abs(pt_old - pt_new) < 5:
+        count_ok += 1
+    else:
+        count_nok += 1
+
+print("Equal pT: " + str(count_ok))
+print("Not equal pT " + str(count_nok))
 
 outf.Write()
