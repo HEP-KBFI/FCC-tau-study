@@ -9,7 +9,7 @@ def get_lorentz_vector(particle):
     vector.SetXYZM(
         particle.core.p4.px,
         particle.core.p4.py,
-        particle.core.p4.px,
+        particle.core.p4.pz,
         particle.core.p4.mass
     )
     return vector

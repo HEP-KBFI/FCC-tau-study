@@ -41,8 +41,8 @@ def check_isolation(tree, i):
 
 
 # files
-inf = TFile('p8_ee_ZH.root')
-outf = TFile('histo_Zmumu.root', 'RECREATE')
+inf = TFile('data/p8_ee_ZH.root')
+outf = TFile('data/histo_Zmumu.root', 'RECREATE')
 
 # histogram settings
 title = 'mass (GeV)'
