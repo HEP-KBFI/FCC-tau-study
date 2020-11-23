@@ -53,6 +53,25 @@ def find_muon_pair_new(tree):
     return pair
 
 
+def find_muon_pair_new_nofilter(tree):
+    # Find a pair of two oppositely charged muons
+    muons = tree.muons
+    pair = None
+    n_mu = len(muons)
+    for i in range(n_mu - 1):
+        vector1 = get_lorentz_vector_new(muons[i])
+        ch1 = muons[i].core.charge
+        for j in range(i + 1, n_mu):
+            vector2 = get_lorentz_vector_new(muons[j])
+            ch2 = muons[j].core.charge
+            if ch1 * ch2 < 0:
+                pair = {
+                    muons[i]: vector1,
+                    muons[j]: vector2
+                }
+    return pair
+
+
 def find_muon_pair(tree):
     # Find a pair of two oppositely charged muons
     muons = tree.muons
@@ -71,6 +90,25 @@ def find_muon_pair(tree):
                 continue
             if not check_isolation(tree, j):
                 continue
+            ch2 = muons[j].core.charge
+            if ch1 * ch2 < 0:
+                pair = {
+                    muons[i]: vector1,
+                    muons[j]: vector2
+                }
+    return pair
+
+
+def find_muon_pair_nofilter(tree):
+    # Find a pair of two oppositely charged muons
+    muons = tree.muons
+    pair = None
+    n_mu = len(muons)
+    for i in range(n_mu - 1):
+        vector1 = utils.get_lorentz_vector(muons[i])
+        ch1 = muons[i].core.charge
+        for j in range(i + 1, n_mu):
+            vector2 = utils.get_lorentz_vector(muons[j])
             ch2 = muons[j].core.charge
             if ch1 * ch2 < 0:
                 pair = {
@@ -106,9 +144,10 @@ n_tot = tree.GetEntries()
 for event in range(n_tot):
     tree.GetEntry(event)
     muon_pair1 = None
+    muon_pair2 = None
     if len(tree.muons) >= 2:
-        muon_pair1 = find_muon_pair(tree)
-        muon_pair2 = find_muon_pair_new(tree)
+        muon_pair1 = find_muon_pair_nofilter(tree)
+        muon_pair2 = find_muon_pair_new_nofilter(tree)
     if muon_pair1:
         mass1 = utils.calculate_mass(muon_pair1)
         histogram1.Fill(mass1)
