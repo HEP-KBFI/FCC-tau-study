@@ -5,26 +5,29 @@ from ROOT import Math, TFile, TH1D, TLorentzVector
 
 def get_lorentz_vector_new(particle):
     # Get the Lorentz Vector of a given particle
-    vector = Math.PxPyPzMVector(
-        particle.core.p4.px,
-        particle.core.p4.py,
-        particle.core.p4.pz,
-        particle.core.p4.mass
-    )
+    vector = Math.PxPyPzMVector()
+    vector.SetPx(particle.core.p4.px)
+    vector.SetPy(particle.core.p4.py)
+    vector.SetPz(particle.core.p4.pz)
+    vector.SetM(particle.core.p4.mass)
     return vector
 
 
 def check_pt(vector, limit):
     # Check whether the transverse momentum corresponding to a given Lorentz vector is over the given limit (GeV)
+    pT = get_pt(vector)
+    if pT > limit:    
+        return True
+    return False
+
+
+def get_pt(vector):
+    pT = None
     try:
         pT = vector.Perp()
     except:
         pT = vector.Perp2()
-    finally:
-        if pT > limit:
-            return True
-        return False
-
+    return pT
 
 def find_muon_pair_new(tree):
     # Find a pair of two oppositely charged muons
@@ -135,24 +138,62 @@ title = 'mass (GeV)'
 bins = 15
 low = 50
 high = 150
-histogram1 = TH1D('old', title, bins, low, high)
-histogram2 = TH1D('new', title, bins, low, high)
+# histogram1 = TH1D('old', title, bins, low, high)
+# histogram2 = TH1D('new', title, bins, low, high)
+histograms = {}
+histogram_list = [
+    'old_mass_nofilter',
+    'new_mass_nofilter',
+    'old_mass',
+    'new_mass',
+    'old_pt_nofilter',
+    'new_pt_nofilter',
+    'old_pt',
+    'new_pt'
+]
+for name in histogram_list:
+    if name.find('pt') != -1:
+        histograms.update(
+            {name: TH1D(name, 'mass (GeV)', bins, 0, high)}
+        )
+    else:
+        histograms.update(
+            {name: TH1D(name, 'pt', bins, low, high)}
+        )
 
 # read events
 tree = inf.Get('events')
 n_tot = tree.GetEntries()
 for event in range(n_tot):
     tree.GetEntry(event)
-    muon_pair1 = None
-    muon_pair2 = None
+    muon_pair_old_nofilter = None
+    muon_pair_new_nofilter = None
+    muon_pair_old = None
+    muon_pair_new = None
     if len(tree.muons) >= 2:
-        muon_pair1 = find_muon_pair_nofilter(tree)
-        muon_pair2 = find_muon_pair_new_nofilter(tree)
-    if muon_pair1:
-        mass1 = utils.calculate_mass(muon_pair1)
-        histogram1.Fill(mass1)
-    if muon_pair2:
-        mass2 = utils.calculate_mass(muon_pair2)
-        histogram2.Fill(mass2)
+        muon_pair_old_nofilter = find_muon_pair_nofilter(tree)
+        muon_pair_new_nofilter = find_muon_pair_new_nofilter(tree)
+        muon_pair_old = find_muon_pair(tree)
+        muon_pair_new = find_muon_pair_new(tree)
+    if muon_pair_old_nofilter:
+        for muon in muon_pair_old_nofilter.values():
+            histograms['old_pt_nofilter'].Fill(get_pt(muon))
+        mass1 = utils.calculate_mass(muon_pair_old_nofilter)
+        histograms['old_mass_nofilter'].Fill(mass1)
+    if muon_pair_new_nofilter:
+        for muon in muon_pair_new_nofilter.values():
+            histograms['new_pt_nofilter'].Fill(get_pt(muon))
+        mass2 = utils.calculate_mass(muon_pair_new_nofilter)
+        histograms['new_mass_nofilter'].Fill(mass2)
+    if muon_pair_old:
+        for muon in muon_pair_old.values():
+            histograms['old_pt'].Fill(get_pt(muon))
+        mass3 = utils.calculate_mass(muon_pair_old)
+        histograms['old_mass'].Fill(mass3)
+    if muon_pair_new:
+        for muon in muon_pair_new.values():
+            histograms['new_pt'].Fill(get_pt(muon))
+        mass4 = utils.calculate_mass(muon_pair_new)
+        histograms['new_mass'].Fill(mass4)
 
 outf.Write()
