@@ -154,11 +154,11 @@ histogram_list = [
 for name in histogram_list:
     if name.find('pt') != -1:
         histograms.update(
-            {name: TH1D(name, 'mass (GeV)', bins, 0, high)}
+            {name: TH1D(name, 'pt', bins, 0, high)}
         )
     else:
         histograms.update(
-            {name: TH1D(name, 'pt', bins, low, high)}
+            {name: TH1D(name, 'mass (GeV)', bins, low, high)}
         )
 
 # read events
