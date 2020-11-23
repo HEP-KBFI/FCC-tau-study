@@ -28,7 +28,7 @@ def get_pt(vector):
     pT = None
     try:
         pT = vector.Perp()
-    except:
+    except AttributeError:
         pT = sqrt(vector.Perp2())
     return pT
 
