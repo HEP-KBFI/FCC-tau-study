@@ -4,6 +4,7 @@ import utils
 from math import sqrt
 from ROOT import Math, TFile, TH1D, TLorentzVector
 
+
 def get_lorentz_vector_new(particle):
     # Get the Lorentz Vector of a given particle
     vector = Math.PxPyPzMVector()
@@ -17,12 +18,13 @@ def get_lorentz_vector_new(particle):
 def check_pt(vector, limit):
     # Check whether the transverse momentum corresponding to a given Lorentz vector is over the given limit (GeV)
     pT = get_pt(vector)
-    if pT > limit:    
+    if pT > limit:
         return True
     return False
 
 
 def get_pt(vector):
+    # Get pT from a given Lorentz vector
     pT = None
     try:
         pT = vector.Perp()
@@ -32,7 +34,7 @@ def get_pt(vector):
 
 
 def find_muon_pair_new(tree):
-    # Find a pair of two oppositely charged muons
+    # Find a pair of two oppositely charged muons with additional filtering (new LorentzVector)
     muons = tree.muons
     pair = None
     n_mu = len(muons)
@@ -59,7 +61,7 @@ def find_muon_pair_new(tree):
 
 
 def find_muon_pair_new_nofilter(tree):
-    # Find a pair of two oppositely charged muons
+    # Find a pair of two oppositely charged muons (new LorentzVector)
     muons = tree.muons
     pair = None
     n_mu = len(muons)
@@ -78,7 +80,7 @@ def find_muon_pair_new_nofilter(tree):
 
 
 def find_muon_pair(tree):
-    # Find a pair of two oppositely charged muons
+    # Find a pair of two oppositely charged muons with additional filtering (legacy TLorentzVector)
     muons = tree.muons
     pair = None
     n_mu = len(muons)
@@ -105,7 +107,7 @@ def find_muon_pair(tree):
 
 
 def find_muon_pair_nofilter(tree):
-    # Find a pair of two oppositely charged muons
+    # Find a pair of two oppositely charged muons (legacy TLorentzVector)
     muons = tree.muons
     pair = None
     n_mu = len(muons)
@@ -131,7 +133,7 @@ def check_isolation(tree, i):
     return False
 
 
- # files
+# files
 inf = TFile('data/p8_ee_ZH.root')
 outf = TFile('data/lorentz.root', 'RECREATE')
 
@@ -140,8 +142,6 @@ title = 'mass (GeV)'
 bins = 15
 low = 50
 high = 150
-# histogram1 = TH1D('old', title, bins, low, high)
-# histogram2 = TH1D('new', title, bins, low, high)
 histograms = {}
 histogram_list = [
     'old_mass_nofilter',
@@ -163,49 +163,62 @@ for name in histogram_list:
             {name: TH1D(name, 'mass (GeV)', bins, low, high)}
         )
 
-# read events
+# initializing comparison count
 count_ok = 0
 count_nok = 0
+
+# read events
 tree = inf.Get('events')
 n_tot = tree.GetEntries()
 for event in range(n_tot):
     tree.GetEntry(event)
+
     muon_pair_old_nofilter = None
     muon_pair_new_nofilter = None
     muon_pair_old = None
     muon_pair_new = None
+
+    # find muon pairs
     if len(tree.muons) >= 2:
         muon_pair_old_nofilter = find_muon_pair_nofilter(tree)
         muon_pair_new_nofilter = find_muon_pair_new_nofilter(tree)
         muon_pair_old = find_muon_pair(tree)
         muon_pair_new = find_muon_pair_new(tree)
+
+    # fill histograms
     if muon_pair_old_nofilter:
         for muon in muon_pair_old_nofilter.values():
             pt_old = get_pt(muon)
             histograms['old_pt_nofilter'].Fill(pt_old)
         mass1 = utils.calculate_mass(muon_pair_old_nofilter)
         histograms['old_mass_nofilter'].Fill(mass1)
+
     if muon_pair_new_nofilter:
         for muon in muon_pair_new_nofilter.values():
             pt_new = get_pt(muon)
             histograms['new_pt_nofilter'].Fill(pt_new)
         mass2 = utils.calculate_mass(muon_pair_new_nofilter)
         histograms['new_mass_nofilter'].Fill(mass2)
+
     if muon_pair_old:
         for muon in muon_pair_old.values():
             histograms['old_pt'].Fill(get_pt(muon))
         mass3 = utils.calculate_mass(muon_pair_old)
         histograms['old_mass'].Fill(mass3)
+
     if muon_pair_new:
         for muon in muon_pair_new.values():
             histograms['new_pt'].Fill(get_pt(muon))
         mass4 = utils.calculate_mass(muon_pair_new)
         histograms['new_mass'].Fill(mass4)
+
+    # count pT matches
     if abs(pt_old - pt_new) < 5:
         count_ok += 1
     else:
         count_nok += 1
 
+# Print out comparison
 print("Equal pT: " + str(count_ok))
 print("Not equal pT " + str(count_nok))
 
