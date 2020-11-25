@@ -2,6 +2,7 @@
 # H->tautau
 
 from ROOT import TFile, TH1D, TLorentzVector
+import copy
 import utils
 
 
@@ -17,7 +18,7 @@ def find_jet_pair(tree):
         vector1 = utils.get_lorentz_vector(jets[i])
         if not check_deltaR(vector1, tree):
             continue
-        if not utils.check_pt(vector1, 30):
+        if not utils.check_pt(vector1, 15):
             continue
         for j in range(i + 1, n_jets):
             if tau_tags[j].tag < 0.5:
@@ -25,7 +26,7 @@ def find_jet_pair(tree):
             vector2 = utils.get_lorentz_vector(jets[j])
             if not check_deltaR(vector2, tree):
                 continue
-            if not utils.check_pt(vector2, 30):
+            if not utils.check_pt(vector2, 15):
                 continue
             pair = {
                 jets[i]: vector1,
@@ -46,12 +47,30 @@ def check_deltaR(vector, tree):
     return False
 
 
+def missing_energy(tree):
+    mc_particles = tree.skimmedGenParticles
+    neutrinos = {}
+    for particle in mc_particles:
+        pdg = particle.core.pdgId
+        if abs(pdg) in [12, 14, 16]:
+            neutrinos.update({particle: utils.get_lorentz_vector(particle)})
+    return neutrinos
+
+
 # files
 inf = TFile('data/p8_ee_ZH.root')
 outf = TFile('data/histo_Htautau.root', 'RECREATE')
 
 # histogram settings
-histogram = TH1D('data', 'mass (GeV)', 15, 75, 175)
+histograms = {}
+histogram_list = {
+    'no_missing_energy',
+    'with_missing_energy'
+}
+for name in histogram_list:
+    histograms.update(
+        {name: TH1D(name, 'mass (GeV)', 20, 75, 175)}
+    )
 
 # read events
 tree = inf.Get('events')
@@ -63,8 +82,12 @@ for event in range(n_tot):
         jet_pair = find_jet_pair(tree)
     if not jet_pair:
         continue
-    mass = utils.calculate_mass(jet_pair) + tree.met[0].magnitude
-    histogram.Fill(mass)
+    jet_pair_missing_energy = copy.deepcopy(jet_pair)
+    mass_no_missing_energy = utils.calculate_mass(jet_pair) # + tree.met[0].magnitude
+    histograms['no_missing_energy'].Fill(mass_no_missing_energy)
+    jet_pair_missing_energy.update(missing_energy(tree))
+    mass_missing_energy = utils.calculate_mass(jet_pair_missing_energy)
+    histograms['with_missing_energy'].Fill(mass_missing_energy)
 
 # write to file
 outf.Write()
