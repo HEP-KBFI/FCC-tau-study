@@ -48,6 +48,7 @@ def check_deltaR(vector, tree):
 
 
 def missing_energy(tree):
+    # finds neutrinos from MC particles
     mc_particles = tree.skimmedGenParticles
     neutrinos = {}
     for particle in mc_particles:
@@ -77,14 +78,20 @@ tree = inf.Get('events')
 n_tot = tree.GetEntries()
 for event in range(n_tot):
     tree.GetEntry(event)
+
+    # find tau jet pairs 
     jet_pair = None
     if len(tree.jets) >= 2:
         jet_pair = find_jet_pair(tree)
     if not jet_pair:
         continue
+
+    # calculate mass without considering missing energy
     jet_pair_missing_energy = copy.deepcopy(jet_pair)
     mass_no_missing_energy = utils.calculate_mass(jet_pair) # + tree.met[0].magnitude
     histograms['no_missing_energy'].Fill(mass_no_missing_energy)
+
+    # calculate mass including missing energy calculated from MC neutrinos
     jet_pair_missing_energy.update(missing_energy(tree))
     mass_missing_energy = utils.calculate_mass(jet_pair_missing_energy)
     histograms['with_missing_energy'].Fill(mass_missing_energy)
