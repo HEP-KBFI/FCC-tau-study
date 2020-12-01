@@ -54,7 +54,10 @@ def missing_energy(tree):
     for particle in mc_particles:
         pdg = particle.core.pdgId
         if abs(pdg) in [12, 14, 16]:
+            # print(pdg, end=':')
+            # print(particle.core.status, end=' ')
             neutrinos.update({particle: utils.get_lorentz_vector(particle)})
+    # print('\n', end='')
     return neutrinos
 
 
@@ -88,7 +91,7 @@ for event in range(n_tot):
 
     # calculate mass without considering missing energy
     jet_pair_missing_energy = copy.deepcopy(jet_pair)
-    mass_no_missing_energy = utils.calculate_mass(jet_pair) # + tree.met[0].magnitude
+    mass_no_missing_energy = utils.calculate_mass(jet_pair)
     histograms['no_missing_energy'].Fill(mass_no_missing_energy)
 
     # calculate mass including missing energy calculated from MC neutrinos
