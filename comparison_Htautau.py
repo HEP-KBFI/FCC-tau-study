@@ -189,16 +189,44 @@ def get_tau_masses(collection):
     return masses
 
 
-def compare_tau_masses(tau_masses):
+def get_gen_tau_energy(tau_set):
+    tau_vector = utils.get_lorentz_vector(tau_set['gen'])
+    neutrino_vector = utils.get_lorentz_vector(tau_set['gen_neutrino'])
+    jet_vector = tau_vector - neutrino_vector
+    energy = jet_vector.E()
+    return energy
+
+
+def get_rec_tau_energy(tau_set):
+    vector = tau_set['rec_vector']
+    energy = vector.E()
+    return energy
+
+
+
+def get_tau_energies(collection):
+    energies = {
+        'gen': [],
+        'rec': []
+    }
+
+    for tau_set in collection:
+        energies['gen'].append(get_gen_tau_energy(tau_set))
+        energies['rec'].append(get_rec_tau_energy(tau_set))
+
+    return energies
+
+
+def compare_tau_energies(tau_energies):
     relative = []
     absolute = []
 
-    gen_masses = tau_masses['gen']
-    rec_masses = tau_masses['rec']
+    gen_energies = tau_energies['gen']
+    rec_energies = tau_energies['rec']
 
-    for i, gen_mass in enumerate(gen_masses):
-        relative.append(rec_masses[i] / gen_mass)
-        absolute.append(rec_masses[i] - gen_mass)
+    for i, gen_energy in enumerate(gen_energies):
+        relative.append(rec_energies[i] / gen_energy)
+        absolute.append(rec_energies[i] - gen_energy)
 
     return relative, absolute
 
@@ -246,19 +274,23 @@ for event in range(n_tot):
         print('No matches found')
         continue
 
-    tau_masses = get_tau_masses(tau_collection)
+    tau_energies = get_tau_energies(tau_collection)
 
-    print('Generated tau jet masses:')
-    for mass in tau_masses['gen']:
-        print(mass)
-        # histograms['gen_taus'].Fill(mass)
+    print('Generated tau jet energies:')
+    for energy in tau_energies['gen']:
+        print(energy)
+        # histograms['gen_taus'].Fill(energy)
 
-    print('Reconstructed tau jet masses:')
-    for mass in tau_masses['rec']:
-        print(mass)
-        # histograms['rec_taus'].Fill(mass)
+    # print('Tau neutrino energies:')
+    # for tau_set in tau_collection:
+    #     print(utils.get_lorentz_vector(tau_set['gen_neutrino']).E())
 
-    relative, absolute = compare_tau_masses(tau_masses)
+    print('Reconstructed tau jet energies:')
+    for energy in tau_energies['rec']:
+        print(energy)
+        # histograms['rec_taus'].Fill(energy)
+
+    relative, absolute = compare_tau_energies(tau_energies)
 
     for value in relative:
         relative_histogram.Fill(value)
