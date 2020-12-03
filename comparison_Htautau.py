@@ -1,6 +1,6 @@
 # Comparing generator level and reconstruction level results
 from ROOT import TFile, TH1D
-import copy
+# import copy
 import utils
 
 
@@ -115,6 +115,7 @@ def get_tau_collection(tree):
     # loop through reconstructed jets
     for i in range(len(jets)):
         curr_set = {}
+
         # select only tau-tagged jets
         if tau_tags[i].tag < 0.5:
             continue
@@ -144,7 +145,7 @@ def get_tau_collection(tree):
                     break
 
         # find corresponding neutrino for gen tau
-        if match_found:
+        if curr_set:
             for particle in gen_particles:
 
                 # select only tau neutrinos
@@ -155,9 +156,11 @@ def get_tau_collection(tree):
                     if pdg * curr_set['gen'].core.pdgId > 0:
                         curr_set.update({'gen_neutrino': particle})
 
-        # add found set into collection
-        if curr_set:
+            # add found set into collection
             tau_collection.append(curr_set)
+
+        else:
+            print('Reconstructed tau jet found with no matching generator tau particle')
 
     return tau_collection
 
@@ -231,6 +234,18 @@ def compare_tau_energies(tau_energies):
     return relative, absolute
 
 
+def get_jetparts(tree, jet):
+    vectors = []
+    jetparts = tree.jetParts
+    begin = jet.particles_begin
+    end = jet.particles_end
+
+    for jetpart in jetparts[begin:end]:
+        vectors.append(utils.get_lorentz_vector(jetpart))
+
+    return vectors
+
+
 # files
 inf = TFile('data/p8_ee_ZH.root')
 outf = TFile('data/histo_comparison.root', 'RECREATE')
@@ -254,14 +269,15 @@ outf = TFile('data/histo_comparison.root', 'RECREATE')
 #         {name: TH1D(name, title, 20, 0, 1)}
 #     )
 
-relative_histogram = TH1D('relative', 'Erec/Egen', 20, 0, 4)
-absolute_histogram = TH1D('absolute', 'Erec - Egen', 20, -1, 1)
+relative_histogram = TH1D('relative', 'Erec/Egen', 10, 0.75, 1.25)
+absolute_histogram = TH1D('absolute', 'Erec - Egen', 20, -1, 9)
 
 # read events
 tree = inf.Get('events')
 n_tot = tree.GetEntries()
 for event in range(n_tot):
     
+    print('===============================')
     print('===============================')
 
     tree.GetEntry(event)
@@ -271,8 +287,15 @@ for event in range(n_tot):
     tau_collection = get_tau_collection(tree)
 
     if not tau_collection:
-        print('No matches found')
+        print('No matches found / No reconstructed tau jets found')
         continue
+
+    print('Chosen generator tau particles:')
+    for tau_set in tau_collection:
+        print('ID ', tau_set['gen'].core.pdgId)
+        # print('Status', tau_set['gen'].core.status)
+
+    print('-------------------------------')
 
     tau_energies = get_tau_energies(tau_collection)
 
@@ -284,6 +307,8 @@ for event in range(n_tot):
     # print('Tau neutrino energies:')
     # for tau_set in tau_collection:
     #     print(utils.get_lorentz_vector(tau_set['gen_neutrino']).E())
+
+    print('-------------------------------')
 
     print('Reconstructed tau jet energies:')
     for energy in tau_energies['rec']:
@@ -297,6 +322,33 @@ for event in range(n_tot):
 
     for value in absolute:
         absolute_histogram.Fill(value)
+
+    print('-------------------------------')
+
+    for tau_set in tau_collection:
+        jetpart_vectors = get_jetparts(tree, tau_set['rec'])
+        print('Reconstructed jet constituents\' energies:')
+
+    # jets = tree.jets
+    # print('Number of jets: ', len(jets))
+    # for jet in jets:
+    #     print(jet)
+    #     print(jet.particles_begin, jet.particles_end)
+    # jetparts = tree.jetParts
+    # print('Number of jetparts: ', len(jetparts))
+    # for jetpart in jetparts:
+    #     print(jetpart)
+
+        energy_sum = 0
+
+        for jetpart in jetpart_vectors:
+            energy = jetpart.E()
+            print(energy)
+            energy_sum += energy
+
+        print('Sum of constituents\' energy:')
+        print(energy_sum)
+
 
     # gen_tau_masses = get_gen_tau_masses(gen_tau_collection)
     # for mass in gen_tau_masses:
