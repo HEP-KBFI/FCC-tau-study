@@ -234,6 +234,19 @@ def compare_tau_energies(tau_energies):
     return relative, absolute
 
 
+def compare_parts_energies(tau_energies, parts_energies):
+    relative = []
+    absolute = []
+
+    gen_energies = tau_energies['gen']
+
+    for i, parts_energy in enumerate(parts_energies):
+        relative.append(parts_energy / gen_energies[i])
+        absolute.append(parts_energy - gen_energies[i])
+
+    return relative, absolute
+
+
 def get_jetparts(tree, jet):
     vectors = []
     jetparts = tree.jetParts
@@ -269,8 +282,10 @@ outf = TFile('data/histo_comparison.root', 'RECREATE')
 #         {name: TH1D(name, title, 20, 0, 1)}
 #     )
 
-relative_histogram = TH1D('relative', 'Erec/Egen', 10, 0.75, 1.25)
-absolute_histogram = TH1D('absolute', 'Erec - Egen', 20, -1, 9)
+relative_hist1 = TH1D('relative_rec_gen', 'Erec/Egen', 10, 0.75, 1.25)
+relative_hist2 = TH1D('relative_parts_gen', 'Eparts/Egen', 10, 0.75, 1.25)
+absolute_hist1 = TH1D('absolute_rec_gen', 'Erec - Egen', 20, -5, 10)
+absolute_hist2 = TH1D('absolute_parts_gen', 'Eparts - Egen', 20, -5, 10)
 
 # read events
 tree = inf.Get('events')
@@ -318,12 +333,14 @@ for event in range(n_tot):
     relative, absolute = compare_tau_energies(tau_energies)
 
     for value in relative:
-        relative_histogram.Fill(value)
+        relative_hist1.Fill(value)
 
     for value in absolute:
-        absolute_histogram.Fill(value)
+        absolute_hist1.Fill(value)
 
     print('-------------------------------')
+
+    parts_energies = []
 
     for tau_set in tau_collection:
         jetpart_vectors = get_jetparts(tree, tau_set['rec'])
@@ -348,6 +365,16 @@ for event in range(n_tot):
 
         print('Sum of constituents\' energy:')
         print(energy_sum)
+
+        parts_energies.append(energy_sum)
+
+    relative2, absolute2 = compare_parts_energies(tau_energies, parts_energies)
+
+    for value in relative2:
+        relative_hist2.Fill(value)
+
+    for value in absolute2:
+        absolute_hist2.Fill(value)
 
 
     # gen_tau_masses = get_gen_tau_masses(gen_tau_collection)
