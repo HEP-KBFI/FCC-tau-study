@@ -1,65 +1,6 @@
 # Comparing generator level and reconstruction level results
 from ROOT import TFile, TH1D
-# import copy
 import utils
-
-
-# def find_gen_taus(tree):
-#     gen_particles = tree.skimmedGenParticles
-#     tau_set = {}
-#     for particle in gen_particles:
-#         pdg = particle.core.pdgId
-#         status = particle.core.status
-#         if abs(pdg) == 15 and status == 2:
-#             tau_set.update({particle: utils.get_lorentz_vector(particle)})
-#         elif abs(pdg) == 16 and status == 1:
-#             tau_set.update({particle: utils.get_lorentz_vector(particle)})
-#     return tau_set
-
-
-# def get_tau_vectors(tau_set):
-#     particles = list(tau_set.keys())
-#     tau_vectors = []
-#     for particle in particles:
-#         pdg = particle.core.pdgId
-#         if abs(pdg) == 15:
-#             tau_vectors.append(tau_set[particle])
-#     return tau_vectors
-
-
-# def get_tau_jet_vectors(tau_set):
-#     particles = list(tau_set.keys())
-#     jet_pos_vector = None
-#     jet_neg_vector = None
-#     for particle in particles:
-#         pdg = particle.core.pdgId
-#         if pdg == 15:
-#             tau_pos_key = particle
-#         elif pdg == -15:
-#             tau_neg_key = particle
-#         elif pdg == 16:
-#             neutrino_pos_key = particle
-#         elif pdg == -16:
-#             neutrino_neg_key = particle
-#     try:
-#         jet_pos_vector = tau_set[tau_pos_key] - tau_set[neutrino_pos_key]
-#         jet_neg_vector = tau_set[tau_neg_key] - tau_set[neutrino_neg_key]
-#     except UnboundLocalError:
-#         pass
-#     finally:
-#         return jet_pos_vector, jet_neg_vector
-
-
-# def get_tau_jet_masses(tau_set):
-#     tau_jet_vector1, tau_jet_vector2 = get_tau_jet_vectors(tau_set)
-#     masses = []
-#     try:
-#         masses.append(tau_jet_vector1.M())
-#         masses.append(tau_jet_vector2.M())
-#     except AttributeError:
-#         pass
-#     finally:
-#         return masses
 
 
 def get_gen_tau_collection(tree):
@@ -263,25 +204,6 @@ def get_jetparts(tree, jet):
 inf = TFile('data/p8_ee_ZH.root')
 outf = TFile('data/histo_comparison.root', 'RECREATE')
 
-# histogram settings
-# histograms = {}
-# histogram_list = {
-#     'gen_taus',
-#     'rec_taus',
-#     'relative',
-#     'absolute'
-# }
-# for name in histogram_list:
-#     if name == 'relative':
-#         title = 'Erec/Egen'
-#     elif name == 'absolute':
-#         title = 'Erec - Egen'
-#     else:
-#         title = 'mass (GeV)'
-#     histograms.update(
-#         {name: TH1D(name, title, 20, 0, 1)}
-#     )
-
 relative_hist1 = TH1D('relative_rec_gen', 'Erec/Egen', 10, 0.75, 1.25)
 relative_hist2 = TH1D('relative_parts_gen', 'Eparts/Egen', 10, 0.75, 1.25)
 absolute_hist1 = TH1D('absolute_rec_gen', 'Erec - Egen', 20, -5, 10)
@@ -308,7 +230,6 @@ for event in range(n_tot):
     print('Chosen generator tau particles:')
     for tau_set in tau_collection:
         print('ID ', tau_set['gen'].core.pdgId)
-        # print('Status', tau_set['gen'].core.status)
 
     print('-------------------------------')
 
@@ -317,18 +238,12 @@ for event in range(n_tot):
     print('Generated tau jet energies:')
     for energy in tau_energies['gen']:
         print(energy)
-        # histograms['gen_taus'].Fill(energy)
-
-    # print('Tau neutrino energies:')
-    # for tau_set in tau_collection:
-    #     print(utils.get_lorentz_vector(tau_set['gen_neutrino']).E())
 
     print('-------------------------------')
 
     print('Reconstructed tau jet energies:')
     for energy in tau_energies['rec']:
         print(energy)
-        # histograms['rec_taus'].Fill(energy)
 
     relative, absolute = compare_tau_energies(tau_energies)
 
@@ -345,16 +260,6 @@ for event in range(n_tot):
     for tau_set in tau_collection:
         jetpart_vectors = get_jetparts(tree, tau_set['rec'])
         print('Reconstructed jet constituents\' energies:')
-
-    # jets = tree.jets
-    # print('Number of jets: ', len(jets))
-    # for jet in jets:
-    #     print(jet)
-    #     print(jet.particles_begin, jet.particles_end)
-    # jetparts = tree.jetParts
-    # print('Number of jetparts: ', len(jetparts))
-    # for jetpart in jetparts:
-    #     print(jetpart)
 
         energy_sum = 0
 
@@ -375,37 +280,6 @@ for event in range(n_tot):
 
     for value in absolute2:
         absolute_hist2.Fill(value)
-
-
-    # gen_tau_masses = get_gen_tau_masses(gen_tau_collection)
-    # for mass in gen_tau_masses:
-    #     histograms['gen_taus'].Fill(mass)
-
-    # print('Gen taus: ', gen_tau_masses, end=' - ')
-
-    # # rec tau jets
-    # rec_tau_collection = get_rec_tau_collection(tree)
-    # rec_tau_masses = get_rec_tau_masses(rec_tau_collection)
-    # for mass in rec_tau_masses:
-    #     histograms['rec_taus'].Fill(mass)
-
-    # print('Rec taus: ', rec_tau_masses)
-
-    # tau_set = find_gen_taus(tree)
-
-    # # calculate tau jet mass
-    # tau_set_4_jets = copy.deepcopy(tau_set)
-    # masses = get_tau_jet_masses(tau_set_4_jets)
-    # for mass in masses:
-    #     print(mass)
-    #     histograms['tau_jets'].Fill(mass)
-
-    # # calculate Higgs mass
-    # tau_vectors = get_tau_vectors(tau_set)
-    # if len(tau_vectors) != 2:
-    #     print('error')
-    # higgs_mass = (tau_vectors[0] + tau_vectors[1]).M()
-    # histograms['higgs'].Fill(higgs_mass)
 
 # write to file
 outf.Write()
