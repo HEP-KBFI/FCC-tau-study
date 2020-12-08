@@ -3,25 +3,6 @@ from ROOT import TFile, TH1D
 import utils
 
 
-def get_gen_tau_collection(tree):
-    gen_particles = tree.skimmedGenParticles
-    tau_collection = {}
-
-    for particle in gen_particles:
-        pdg = particle.core.pdgId
-        status = particle.core.status
-
-        # find taus
-        if abs(pdg) == 15 and status == 2:
-            tau_collection.update({pdg: utils.get_lorentz_vector(particle)})
-
-        # find tau neutrinos
-        elif abs(pdg) == 16 and status == 1:
-            tau_collection.update({pdg: utils.get_lorentz_vector(particle)})
-
-    return tau_collection
-
-
 def get_gen_tau_masses(collection):
     vectors = []
 
