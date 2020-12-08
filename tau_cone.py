@@ -48,11 +48,35 @@ def calculate_energy_difference(particle, cone):
     return energy_diff
 
 
-def fill_histogram(tree, particles, cone_size, histogram):
+def fill_histogram(tree, particles, cone_size, histogram, statistics):
     for particle in particles:
         cone = get_particle_cone(tree, particle, cone_size)
         energy_diff = calculate_energy_difference(particle, cone)
         histogram.Fill(energy_diff)
+        particle_statistics(cone, statistics)
+
+
+def particle_statistics(cone, statistics):
+    particles = list(cone.keys())
+    for particle in particles:
+        pdg = particle.core.pdgId
+        if pdg in statistics:
+            statistics[pdg] += 1
+        else:
+            statistics.update({pdg: 1})
+
+
+def sort_statistics(statistics):
+    sorted_statistics = {key: value for key, value in sorted(statistics.items(), key=lambda item: item[1], reverse=True)}
+    return sorted_statistics
+
+
+def print_statistcs(statistics):
+    count = 0
+    for particle in statistics:
+        print(particle, '\t:\t', statistics[particle])
+        count += statistics[particle]
+    print('Total\t:\t', count)
 
 
 # files
@@ -62,6 +86,10 @@ outf = TFile('data/tau_cone.root', 'RECREATE')
 hist1 = TH1D('delta R < 0.5', 'delta E', 200, -100, 100)
 hist2 = TH1D('delta R < 0.3', 'delta E', 200, -100, 100)
 hist3 = TH1D('delta R < 0.1', 'delta E', 200, -100, 100)
+
+stat1 = {}
+stat2 = {}
+stat3 = {}
 
 # read events
 tree = inf.Get('events')
@@ -73,9 +101,30 @@ for event in range(n_tot):
     # find all generator taus
     taus = get_gen_taus(tree)
 
-    fill_histogram(tree, taus, 0.5, hist1)
-    fill_histogram(tree, taus, 0.3, hist2)
-    fill_histogram(tree, taus, 0.1, hist3)
+    fill_histogram(tree, taus, 0.5, hist1, stat1)
+    fill_histogram(tree, taus, 0.3, hist2, stat2)
+    fill_histogram(tree, taus, 0.1, hist3, stat3)
 
 # write to file
 outf.Write()
+
+# print out statistics
+print('-------------------------------')
+
+print("delta R < 0.5")
+stat1 = sort_statistics(stat1)
+print_statistcs(stat1)
+
+print('-------------------------------')
+
+print("delta R < 0.3")
+stat2 = sort_statistics(stat2)
+print_statistcs(stat2)
+
+print('-------------------------------')
+
+print("delta R < 0.1")
+stat3 = sort_statistics(stat3)
+print_statistcs(stat3)
+
+print('-------------------------------')
