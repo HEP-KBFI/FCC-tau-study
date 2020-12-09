@@ -1,8 +1,9 @@
+# Observing particles in different sized cones around a tau
 from ROOT import TFile, TH1D
 import utils
 
 def get_gen_taus(tree):
-    gen_particles = tree.skimmedGenParticles
+    gen_particles = tree.genParticles
     taus = []
 
     # loop through generator particles
@@ -13,24 +14,39 @@ def get_gen_taus(tree):
         # find taus
         if abs(pdg) == 15 and status == 2:
             taus.append(utils.get_lorentz_vector(particle))
+            # print('Found tau: ', pdg)
 
     return taus
 
 
 def get_particle_cone(tree, lorentz_vector, cone_size):
-    gen_particles = tree.skimmedGenParticles
+    gen_particles = tree.genParticles
     cone_particles = {}
 
     # loop through all generator particles
     for gen_particle in gen_particles:
         gen_vector = utils.get_lorentz_vector(gen_particle)
 
+        pdg = gen_particle.core.pdgId
+        status = gen_particle.core.status
+
+        # print(pdg)
+
+        # if True:
+        #     continue
+
+        # print('Found 22 with status ', status)
+
         # check if particle is stable
-        if gen_particle.core.status != 1:
+        if status != 1:
             continue
+
+        # print('Checking stable particle ', pdg)
 
         # find delta R w.r.t given lorentz vector
         deltaR = lorentz_vector.DeltaR(gen_vector)
+
+        # print('delta R w.r.t tau: ', deltaR)
 
         # compare delta R to given cone size
         if deltaR < cone_size:
@@ -49,11 +65,24 @@ def calculate_energy_difference(particle, cone):
 
 
 def fill_histogram(tree, particles, cone_size, histogram, statistics):
-    for particle in particles:
+    cones = []
+    energy_diffs = []
+    for i, particle in enumerate(particles):
+
+        # print('Finding cone around tau ', i + 1)
+
         cone = get_particle_cone(tree, particle, cone_size)
         energy_diff = calculate_energy_difference(particle, cone)
+
         histogram.Fill(energy_diff)
         particle_statistics(cone, statistics)
+
+        cones.append(cone)
+        energy_diffs.append(energy_diff)
+
+        # print('\n')
+
+    # return cones, energy_diffs
 
 
 def particle_statistics(cone, statistics):
@@ -80,7 +109,7 @@ def print_statistcs(statistics):
 
 
 # files
-inf = TFile('data/p8_ee_ZH.root')
+inf = TFile('data/p8_output.root')
 outf = TFile('data/tau_cone.root', 'RECREATE')
 
 hist1 = TH1D('delta R < 0.5', 'delta E', 200, -100, 100)
@@ -101,15 +130,32 @@ for event in range(n_tot):
     # find all generator taus
     taus = get_gen_taus(tree)
 
+    # print('\n')
+
     fill_histogram(tree, taus, 0.5, hist1, stat1)
     fill_histogram(tree, taus, 0.3, hist2, stat2)
     fill_histogram(tree, taus, 0.1, hist3, stat3)
+
+    # print('Event ', event + 1)
+
+    # for i, energy in enumerate(energy_diffs):
+    #     if energy < -60:
+    #         print('Tau ', i + 1)
+    #         print(energy)
+    #         n_particles = len(cones[i])
+    #         print('Number of particles in cone: ', n_particles)
+    #         if n_particles:
+    #             print('Particles:')
+    #             for particle in list(cones[i].keys()):
+    #                 print(particle.core.pdgId)
+    #     else:
+    #         print('Tau ', i + 1, ' passed.')
 
 # write to file
 outf.Write()
 
 # print out statistics
-print('-------------------------------')
+print('----------Statistics-----------')
 
 print("delta R < 0.5")
 stat1 = sort_statistics(stat1)

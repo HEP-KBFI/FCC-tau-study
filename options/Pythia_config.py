@@ -1,4 +1,5 @@
-import sys, os
+# Run Pythia simulation and save all results
+# import sys, os
 from Gaudi.Configuration import *
 
 # Workflow Steering
