@@ -64,25 +64,19 @@ def calculate_energy_difference(particle, cone):
     return energy_diff
 
 
-def fill_histogram(tree, particles, cone_size, histogram, statistics):
-    cones = []
-    energy_diffs = []
+def fill_histogram(particles, cones, histogram, statistics):
+    # energy_diffs = []
     for i, particle in enumerate(particles):
 
-        # print('Finding cone around tau ', i + 1)
-
-        cone = get_particle_cone(tree, particle, cone_size)
-        energy_diff = calculate_energy_difference(particle, cone)
+        energy_diff = calculate_energy_difference(particle, cones[i])
+        # energy_diffs.append(energy_diff)
 
         histogram.Fill(energy_diff)
-        particle_statistics(cone, statistics)
-
-        cones.append(cone)
-        energy_diffs.append(energy_diff)
+        particle_statistics(cones[i], statistics)
 
         # print('\n')
 
-    # return cones, energy_diffs
+    # return energy_diffs
 
 
 def particle_statistics(cone, statistics):
@@ -112,9 +106,9 @@ def print_statistcs(statistics):
 inf = TFile('data/p8_output.root')
 outf = TFile('data/tau_cone.root', 'RECREATE')
 
-hist1 = TH1D('delta R < 0.5', 'delta E', 200, -100, 100)
-hist2 = TH1D('delta R < 0.3', 'delta E', 200, -100, 100)
-hist3 = TH1D('delta R < 0.1', 'delta E', 200, -100, 100)
+hist1 = TH1D('delta R < 0.5', 'delta E', 150, -75, 75)
+hist2 = TH1D('delta R < 0.3', 'delta E', 150, -75, 75)
+hist3 = TH1D('delta R < 0.1', 'delta E', 150, -75, 75)
 
 stat1 = {}
 stat2 = {}
@@ -130,11 +124,23 @@ for event in range(n_tot):
     # find all generator taus
     taus = get_gen_taus(tree)
 
-    # print('\n')
+    # find cones for each tau
+    cones1 = []
+    cones2 = []
+    cones3 = []
 
-    fill_histogram(tree, taus, 0.5, hist1, stat1)
-    fill_histogram(tree, taus, 0.3, hist2, stat2)
-    fill_histogram(tree, taus, 0.1, hist3, stat3)
+    for tau in taus:
+        # delta R < 0.5
+        cones1.append(get_particle_cone(tree, tau, 0.5))
+        # delta R < 0.3
+        cones2.append(get_particle_cone(tree, tau, 0.3))
+        # delta R < 0.1
+        cones3.append(get_particle_cone(tree, tau, 0.1))
+
+    # fill histograms
+    fill_histogram(taus, cones1, hist1, stat1)
+    fill_histogram(taus, cones2, hist2, stat2)
+    fill_histogram(taus, cones3, hist3, stat3)
 
     # print('Event ', event + 1)
 
