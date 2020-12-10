@@ -13,8 +13,9 @@ def get_gen_taus(tree):
 
         # find taus
         if abs(pdg) == 15 and status == 2:
-            taus.append(utils.get_lorentz_vector(particle))
-            # print('Found tau: ', pdg)
+            vector = utils.get_lorentz_vector(particle)
+            taus.append(vector)
+            # print('Found tau: ', pdg, ' with energy ', vector.E())
 
     return taus
 
@@ -30,23 +31,15 @@ def get_particle_cone(tree, lorentz_vector, cone_size):
         pdg = gen_particle.core.pdgId
         status = gen_particle.core.status
 
-        # print(pdg)
-
-        # if True:
-        #     continue
-
-        # print('Found 22 with status ', status)
-
         # check if particle is stable
         if status != 1:
             continue
 
-        # print('Checking stable particle ', pdg)
-
         # find delta R w.r.t given lorentz vector
         deltaR = lorentz_vector.DeltaR(gen_vector)
 
-        # print('delta R w.r.t tau: ', deltaR)
+        # if pdg in [11, 12, -11, -12]:
+        #     print('Found ', pdg, ' with delta R ', deltaR, ' and energy ', gen_vector.E())
 
         # compare delta R to given cone size
         if deltaR < cone_size:
@@ -64,7 +57,7 @@ def calculate_energy_difference(particle, cone):
     return energy_diff
 
 
-def fill_histogram(particles, cones, histogram, statistics):
+def fill_histogram(particles, cones, histogram):
     # energy_diffs = []
     for i, particle in enumerate(particles):
 
@@ -72,9 +65,7 @@ def fill_histogram(particles, cones, histogram, statistics):
         # energy_diffs.append(energy_diff)
 
         histogram.Fill(energy_diff)
-        particle_statistics(cones[i], statistics)
-
-        # print('\n')
+        # particle_statistics(cones[i], statistics)
 
     # return energy_diffs
 
@@ -110,9 +101,9 @@ hist1 = TH1D('delta R < 0.5', 'delta E', 150, -75, 75)
 hist2 = TH1D('delta R < 0.3', 'delta E', 150, -75, 75)
 hist3 = TH1D('delta R < 0.1', 'delta E', 150, -75, 75)
 
-stat1 = {}
-stat2 = {}
-stat3 = {}
+# stat1 = {}
+# stat2 = {}
+# stat3 = {}
 
 # read events
 tree = inf.Get('events')
@@ -129,7 +120,9 @@ for event in range(n_tot):
     cones2 = []
     cones3 = []
 
-    for tau in taus:
+    for i, tau in enumerate(taus):
+        # print('Tau ', i + 1)
+
         # delta R < 0.5
         cones1.append(get_particle_cone(tree, tau, 0.5))
         # delta R < 0.3
@@ -138,45 +131,41 @@ for event in range(n_tot):
         cones3.append(get_particle_cone(tree, tau, 0.1))
 
     # fill histograms
-    fill_histogram(taus, cones1, hist1, stat1)
-    fill_histogram(taus, cones2, hist2, stat2)
-    fill_histogram(taus, cones3, hist3, stat3)
+    fill_histogram(taus, cones1, hist1)
+    fill_histogram(taus, cones2, hist2)
+    fill_histogram(taus, cones3, hist3)
 
-    # print('Event ', event + 1)
-
-    # for i, energy in enumerate(energy_diffs):
-    #     if energy < -60:
-    #         print('Tau ', i + 1)
+    # for i, energy in enumerate(energies):
+    #     # print(energy)
+    #     if energy < -0.5:
+    #         print('Event ', event + 1)
     #         print(energy)
-    #         n_particles = len(cones[i])
-    #         print('Number of particles in cone: ', n_particles)
-    #         if n_particles:
-    #             print('Particles:')
-    #             for particle in list(cones[i].keys()):
-    #                 print(particle.core.pdgId)
-    #     else:
-    #         print('Tau ', i + 1, ' passed.')
+            # print('Tau ', i + 1)
+            # cone = list(cones1[i].keys())
+            # for particle in cone:
+            #     print(particle.core.pdgId)
+            #     print(cones1[i][particle].E())
 
 # write to file
 outf.Write()
 
 # print out statistics
-print('----------Statistics-----------')
+# print('----------Statistics-----------')
 
-print("delta R < 0.5")
-stat1 = sort_statistics(stat1)
-print_statistcs(stat1)
+# print("delta R < 0.5")
+# stat1 = sort_statistics(stat1)
+# print_statistcs(stat1)
 
-print('-------------------------------')
+# print('-------------------------------')
 
-print("delta R < 0.3")
-stat2 = sort_statistics(stat2)
-print_statistcs(stat2)
+# print("delta R < 0.3")
+# stat2 = sort_statistics(stat2)
+# print_statistcs(stat2)
 
-print('-------------------------------')
+# print('-------------------------------')
 
-print("delta R < 0.1")
-stat3 = sort_statistics(stat3)
-print_statistcs(stat3)
+# print("delta R < 0.1")
+# stat3 = sort_statistics(stat3)
+# print_statistcs(stat3)
 
-print('-------------------------------')
+# print('-------------------------------')
