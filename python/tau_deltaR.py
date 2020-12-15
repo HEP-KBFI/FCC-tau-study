@@ -1,4 +1,4 @@
-# Comparison of tau tagged jets to MC taus
+# Finding delta R of tau tagged jets w.r.t MC taus
 
 from ROOT import TFile, TH1D
 import utils

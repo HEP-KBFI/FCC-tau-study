@@ -1,8 +1,8 @@
-# Testing different Lorentz vector functions
+# Testing different Lorentz vector functions and comparing results
 
 import utils
 from math import sqrt
-from ROOT import Math, TFile, TH1D, TLorentzVector
+from ROOT import Math, TFile, TH1D
 
 
 def get_lorentz_vector_new(particle):

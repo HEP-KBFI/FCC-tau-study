@@ -2,6 +2,7 @@
 from ROOT import TFile, TH1D
 import utils
 
+
 def get_gen_taus(tree):
     gen_particles = tree.genParticles
     taus = []
@@ -28,7 +29,7 @@ def get_particle_cone(tree, lorentz_vector, cone_size):
     for gen_particle in gen_particles:
         gen_vector = utils.get_lorentz_vector(gen_particle)
 
-        pdg = gen_particle.core.pdgId
+        # pdg = gen_particle.core.pdgId
         status = gen_particle.core.status
 
         # check if particle is stable
@@ -57,15 +58,14 @@ def calculate_energy_difference(particle, cone):
     return energy_diff
 
 
-def fill_histogram(particles, cones, histogram):
+def fill_histogram(particles, cones, histogram, statistics):
     # energy_diffs = []
     for i, particle in enumerate(particles):
-
         energy_diff = calculate_energy_difference(particle, cones[i])
         # energy_diffs.append(energy_diff)
 
         histogram.Fill(energy_diff)
-        # particle_statistics(cones[i], statistics)
+        particle_statistics(cones[i], statistics)
 
     # return energy_diffs
 
@@ -81,7 +81,8 @@ def particle_statistics(cone, statistics):
 
 
 def sort_statistics(statistics):
-    sorted_statistics = {key: value for key, value in sorted(statistics.items(), key=lambda item: item[1], reverse=True)}
+    sorted_statistics = {key: value for key, value in
+                         sorted(statistics.items(), key=lambda item: item[1], reverse=True)}
     return sorted_statistics
 
 
@@ -101,9 +102,9 @@ hist1 = TH1D('delta R < 0.5', 'delta E', 150, -75, 75)
 hist2 = TH1D('delta R < 0.3', 'delta E', 150, -75, 75)
 hist3 = TH1D('delta R < 0.1', 'delta E', 150, -75, 75)
 
-# stat1 = {}
-# stat2 = {}
-# stat3 = {}
+stat1 = {}
+stat2 = {}
+stat3 = {}
 
 # read events
 tree = inf.Get('events')
@@ -131,41 +132,41 @@ for event in range(n_tot):
         cones3.append(get_particle_cone(tree, tau, 0.1))
 
     # fill histograms
-    fill_histogram(taus, cones1, hist1)
-    fill_histogram(taus, cones2, hist2)
-    fill_histogram(taus, cones3, hist3)
+    fill_histogram(taus, cones1, hist1, stat1)
+    fill_histogram(taus, cones2, hist2, stat2)
+    fill_histogram(taus, cones3, hist3, stat3)
 
     # for i, energy in enumerate(energies):
     #     # print(energy)
     #     if energy < -0.5:
     #         print('Event ', event + 1)
     #         print(energy)
-            # print('Tau ', i + 1)
-            # cone = list(cones1[i].keys())
-            # for particle in cone:
-            #     print(particle.core.pdgId)
-            #     print(cones1[i][particle].E())
+    # print('Tau ', i + 1)
+    # cone = list(cones1[i].keys())
+    # for particle in cone:
+    #     print(particle.core.pdgId)
+    #     print(cones1[i][particle].E())
 
 # write to file
 outf.Write()
 
 # print out statistics
-# print('----------Statistics-----------')
+print('----------Statistics-----------')
 
-# print("delta R < 0.5")
-# stat1 = sort_statistics(stat1)
-# print_statistcs(stat1)
+print("delta R < 0.5")
+stat1 = sort_statistics(stat1)
+print_statistcs(stat1)
 
-# print('-------------------------------')
+print('-------------------------------')
 
-# print("delta R < 0.3")
-# stat2 = sort_statistics(stat2)
-# print_statistcs(stat2)
+print("delta R < 0.3")
+stat2 = sort_statistics(stat2)
+print_statistcs(stat2)
 
-# print('-------------------------------')
+print('-------------------------------')
 
-# print("delta R < 0.1")
-# stat3 = sort_statistics(stat3)
-# print_statistcs(stat3)
+print("delta R < 0.1")
+stat3 = sort_statistics(stat3)
+print_statistcs(stat3)
 
-# print('-------------------------------')
+print('-------------------------------')

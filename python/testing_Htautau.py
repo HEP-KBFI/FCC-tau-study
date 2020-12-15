@@ -1,7 +1,7 @@
 # Testing how to read from Delphes output file
 # H->tautau
 
-from ROOT import TFile, TH1D, TLorentzVector
+from ROOT import TFile, TH1D
 import copy
 import utils
 

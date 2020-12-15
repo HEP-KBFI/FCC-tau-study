@@ -1,4 +1,4 @@
-# Comparing generator level and reconstruction level results
+# Comparing tau energies from generator level and reconstruction level results
 from ROOT import TFile, TH1D
 import utils
 
@@ -27,7 +27,6 @@ def get_gen_tau_masses(collection):
 
 
 def get_tau_collection(tree):
-
     # get data from tree
     jets = tree.jets
     tau_tags = tree.tauTags
@@ -46,8 +45,7 @@ def get_tau_collection(tree):
         vector = utils.get_lorentz_vector(jets[i])
 
         # find a matching generator tau particle for reconstructed jet
-        match_found = False
-        for particle in gen_particles: 
+        for particle in gen_particles:
 
             # select only taus
             pdg = particle.core.pdgId
@@ -55,7 +53,7 @@ def get_tau_collection(tree):
 
                 # find delta R of tau jet w.r.t generated tau
                 deltaR = vector.DeltaR(utils.get_lorentz_vector(particle))
-                
+
                 # select generated tau with small delta R
                 if deltaR < 0.05:
                     curr_set = {
@@ -63,7 +61,6 @@ def get_tau_collection(tree):
                         'rec': jets[i],
                         'rec_vector': vector
                     }
-                    match_found = True
                     break
 
         # find corresponding neutrino for gen tau
@@ -126,7 +123,6 @@ def get_rec_tau_energy(tau_set):
     vector = tau_set['rec_vector']
     energy = vector.E()
     return energy
-
 
 
 def get_tau_energies(collection):
@@ -194,7 +190,7 @@ absolute_hist2 = TH1D('absolute_parts_gen', 'Eparts - Egen', 20, -5, 10)
 tree = inf.Get('events')
 n_tot = tree.GetEntries()
 for event in range(n_tot):
-    
+
     print('===============================')
     print('===============================')
 
