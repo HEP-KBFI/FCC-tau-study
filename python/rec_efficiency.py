@@ -3,12 +3,59 @@
 from ROOT import TFile, TEfficiency
 import utils
 
-def find_gen_match(tree, jet):
+
+class GeneratorTau:
+    # Data object to associate generator level final taus with corresponding previous state
+    def __init__(self, data):
+        self.data = data
+        self.vector = utils.get_lorentz_vector(self.data)
+        self.other_states = []
+
+    def add_state(self, candidate):
+        # Check if candidate tau is a previous state of the given generator tau and add it 
+        candidate_state = GeneratorTau(candidate)
+        deltaR = self.vector.DeltaR(candidate_state.vector)
+        if deltaR < 0.05:
+            self.other_states.append(candidate_state)
+            return True
+        return False
+
+    def pt(self):
+        return utils.get_pt(self.vector)
+
+
+def get_gen_taus(tree):
+    # Get generator level taus as final taus with corresponding previous states
+    gen_particles = tree.skimmedGenParticles
+    final_taus = []
+    previous_states = []
+
+    # Find generator level taus
+    for particle in gen_particles:
+        if abs(particle.core.pdgId) != 15:
+            continue
+        if particle.core.status == 2:
+            final_taus.append(GeneratorTau(particle))
+        else:
+            previous_states.append(particle)
+
+    # Match previous states to final taus
+    for tau in previous_states:
+        for final_tau in final_taus:
+            if final_tau.add_state(tau):
+                continue
+
+    return final_taus
+
+
+
+def find_gen_match(tree):
 
     gen_particles = tree.skimmedGenParticles
 
-    final_taus = []
-    other_taus = []
+    # final_taus = []
+    # other_taus = []
+    taus = []
 
     for particle in gen_particles:
         pdg = particle.core.pdgId
@@ -17,26 +64,82 @@ def find_gen_match(tree, jet):
         if abs(pdg) != 15:
             continue
 
-        if status == 2:
-            final_taus.append(particle)
+        taus.append(particle)
+
+        # if status == 2:
+        #     final_taus.append(particle)
+        # else:
+        #     other_taus.append(particle)
+
+    # rec_vector = utils.get_lorentz_vector(jet)
+
+    # for i in range(len(taus) - 1):
+    #     print(taus[i].core.status)
+    #     ivector = utils.get_lorentz_vector(taus[i])
+    #     for j in range(i + 1, len(taus)):
+    #         jvector = utils.get_lorentz_vector(taus[j])
+    #         deltaR = ivector.DeltaR(jvector)
+    #         print(taus[j].core.status, end=':')
+    #         print(deltaR, end=' ')
+    #     print()
+
+
+    # for tau in final_tau:
+    #     gen_vector = utils.get_lorentz_vector(tau)
+    #     deltaR = rec_vector.DeltaR(gen_vector)
+    #     if deltaR < 0.05:
+    #         return True
+
+    # for tau in other_taus:
+    #     gen_vector = utils.get_lorentz_vector(tau)
+    #     deltaR = rec_vector.DeltaR(gen_vector)
+    #     if deltaR < 0.05:
+    #         return True
+
+    # return False
+
+
+
+def match_gen_tau_to_tau_jet(gen_tau, jets, tau_tags):
+    # Try to match a generator tau to a tau tagged reconstructed jet
+    for i in range(len(jets)):
+        # Check if jet is a tau
+        if tau_tags[i].tag < 0.5:
+            continue
+        # Compare delta R of reconstruced jet w.r.t generator tau
+        rec_vector = utils.get_lorentz_vector(jets[i])
+        deltaR = rec_vector.DeltaR(gen_tau.vector)
+        if deltaR < 0.05:
+            return jets[i]
+    return None
+
+
+
+def fill_histos(tree, efficiency_histo):
+    jets = tree.jets
+    tau_tags = tree.tauTags
+    gen_taus = get_gen_taus(tree)
+
+    # Find efficiency
+    for tau in gen_taus:
+
+        # Try to match a final state  of a generated tau to a reconstructed jet
+        match = match_gen_tau_to_tau_jet(tau, jets, tau_tags)
+
+        if not match:
+        # Try to match any previous state of a generated tau to a reconstruced jet
+            for previous_state in tau.other_states:
+                match = match_gen_tau_to_tau_jet(previous_state, jets, tau_tags)
+                if match:
+                    break
+
+        # Fill efficiency histogram
+        pt = tau.pt()
+        if match:
+            efficiency_histo.Fill(True, pt)
         else:
-            other_taus.append(particle)
+            efficiency_histo.Fill(False, pt)
 
-    rec_vector = utils.get_lorentz_vector(jet)
-
-    for tau in final_tau:
-        gen_vector = utils.get_lorentz_vector(tau)
-        deltaR = rec_vector.DeltaR(gen_vector)
-        if deltaR < 0.05:
-            return True
-
-    for tau in other_taus:
-        gen_vector = utils.get_lorentz_vector(tau)
-        deltaR = rec_vector.DeltaR(gen_vector)
-        if deltaR < 0.05:
-            return True
-
-    return False
 
 
 def fill_histograms(tree, efficiency_histo, fake_histo):
@@ -112,7 +215,7 @@ outf = TFile('data/rec_efficiency.root', 'RECREATE')
 # fake_histo = TH1D('fake rate', 'fake rate', 8, 0, 120)
 
 efficiency_histo = TEfficiency('efficiency', 'efficiency', 8, 0, 120)
-fake_histo = TEfficiency('efficiency', 'efficiency', 8, 0, 120)
+# fake_histo = TEfficiency('efficiency', 'efficiency', 8, 0, 120)
 
 # read events
 tree = inf.Get('events')
@@ -131,7 +234,7 @@ for event in range(n_tot):
 
     tree.GetEntry(event)
 
-    print('Event ', event + 1)
+    # print('Event ', event + 1)
 
     jets = tree.jets
     tau_tags = tree.tauTags
@@ -167,16 +270,18 @@ for event in range(n_tot):
         if abs(pdg) != 15:
             continue
 
-        print(particle.core.status, end=' ')
+        # print(particle.core.status, end=' ')
         gen_total += 1
 
         status = particle.core.status
         if status == 2:
             gen_stable += 1
 
-    print()
+    # print()
 
-    fill_histograms(tree, efficiency_histo, fake_histo)
+    fill_histos(tree, efficiency_histo)
+
+    # fill_histograms(tree, efficiency_histo, fake_histo)
     # efficiency_histo.Divide(all_histo)
     # fake_histo.Divide(all_histo)
     # efficiency_plot(tree, efficiency_histo)
