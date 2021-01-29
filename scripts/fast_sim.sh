@@ -12,11 +12,11 @@ then
   mkdir data
 fi
 
-options="$FCCSW/Sim/SimDelphesInterface/options/PythiaDelphes_config_IDEAtrkCov.py"
+options="options/Delphes_config.py"
 card="cards/Pythia_ee_ZH_Htautau.cmd"
-output="data/delphes_Htautau.root"
-log="data/log.txt"
-n_events="1000"
+output="data/k4_delphes_output.root"
+log="data/k4_log.txt"
+n_events="10000"
 
-fccrun $options --Filename $card --filename $output -n $n_events > $log
+k4run $options --Filename $card --filename $output -n $n_events > $log
 fi
