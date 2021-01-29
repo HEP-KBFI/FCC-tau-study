@@ -1,5 +1,4 @@
 # Useful functions
-
 from ROOT import Math, TLorentzVector
 
 
@@ -51,5 +50,5 @@ def get_pt(vector):
     try:
         pT = vector.Perp()
     except AttributeError:
-        pT = sqrt(vector.Perp2())
+        pT = Math.sqrt(vector.Perp2())
     return pT
