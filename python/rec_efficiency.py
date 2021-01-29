@@ -1,6 +1,6 @@
 # Plotting the efficiency and fake rate of tau reconstruction
 
-from ROOT import TFile, TEfficiency
+from ROOT import TFile, TEfficiency, TH1D
 import utils
 
 
@@ -68,7 +68,7 @@ class EventTauFinder:
         # Save generator level tau particle
         for obj in self.taus:
             if not obj.gen_tau and not obj.rec_taujet:
-                obj.gen_tau = tau
+                obj.create_gen_tau(tau)
                 break
 
     def __add_neutrino(self, neutrino):
@@ -91,8 +91,7 @@ class EventTauFinder:
                 if obj.match_reconstruction(jet):
                     return
         fake = TauJet()
-        fake.rec_taujet = jet
-        fake.rec_vector = utils.get_lorentz_vector(jet)
+        fake.create_rec_tau(jet)
         self.taus.append(fake)
 
     def get_gen_taus(self):
@@ -147,6 +146,11 @@ class TauJet:
         self.rec_taujet = None
         self.rec_vector = None
 
+    def create_gen_tau(self, tau):
+        # Create a generator level tau
+        self.gen_tau = tau
+        self.gen_vector = utils.get_lorentz_vector(tau)
+
     def match_neutrino(self, neutrino):
         # Match a tau neutrino to a generator level tau particle
         if self.gen_tau.core.pdgId * neutrino.core.pdgId > 0:
@@ -154,6 +158,11 @@ class TauJet:
             self.gen_vector = utils.get_lorentz_vector(self.gen_tau) - utils.get_lorentz_vector(neutrino)
             return True
         return False
+
+    def create_rec_tau(self, taujet):
+        # Create a reconstructed tau jet
+        self.rec_taujet = taujet
+        self.rec_vector = utils.get_lorentz_vector(taujet)
 
     # def match_previous_states(self, state):
     #     # Match generator level information about previous states to a tau particle
@@ -191,11 +200,16 @@ class TauJet:
 
     def pt(self):
         # Return the pT of the tau
-        if self.gen_vector:
-            return utils.get_pt(self.gen_vector)
-        # elif not self.rec_vector:
-        #     self.rec_vector = utils.get_lorentz_vector(self.rec_taujet)
-        return utils.get_pt(self.rec_vector)
+        if self.rec_taujet:
+            return utils.get_pt(self.rec_vector)
+        return utils.get_pt(self.gen_vector)
+
+    def visible_pt(self):
+        # Return the visible pT of a generator tau
+        if not self.gen_tau:
+            return None
+        vector = utils.get_lorentz_vector(self.gen_tau)
+        return utils.get_pt(vector)
 
     def eta(self):
         # Return the eta of the tau
@@ -204,13 +218,12 @@ class TauJet:
         return self.rec_vector.Eta()
 
 
-def fill_histograms(taus, efficiency_pt, efficiency_eta, fake_histo):
+def fill_histograms(taus, efficiency_pt, fake_histo):
     # Fill efficiency histogram
     gen_taus = taus.get_gen_taus()
     for tau in gen_taus:
         value = tau.check_reconstructed()
-        efficiency_pt.Fill(value, tau.pt())
-        efficiency_eta.Fill(value, tau.eta())
+        efficiency_pt.Fill(value, tau.visible_pt())
 
     # Fill fake rate histogram
     rec_taus = taus.get_rec_taus()
@@ -223,9 +236,8 @@ inf = TFile('data/delphes_output.root')
 outf = TFile('data/rec_efficiency.root', 'RECREATE')
 
 # Create histograms
-efficiency_pt = TEfficiency('efficiency (pT)', 'efficiency (pT)', 20, 0, 100)
-efficiency_eta = TEfficiency('efficiency (eta)', 'efficiency (eta)', 12, -5.3, 6.7)
-fake_histo = TEfficiency('fake rate', 'fake rate', 20, 0, 100)
+efficiency_pt = TEfficiency('efficiency (pT)', 'efficiency (pT)', 13, 0, 130)
+fake_histo = TEfficiency('fake rate', 'fake rate', 13, 0, 130)
 
 n_tag = 0  # Count of correctly tagged true taus
 n_gen = 0  # Count of true taus
@@ -240,6 +252,12 @@ for event in range(n_tot):
     taus = EventTauFinder(tree)
 
     # for tau in taus.taus:
+    # pt = tau.pt()
+    # if pt > 100:
+    #     print("Event ", event + 1)
+    #     tau.printout()
+    #     print("-----------------")
+    #     print()
     #     if tau.check_reconstructed():
     #         gen_pt = utils.get_pt(tau.gen_vector)
     #         if not tau.rec_vector:
@@ -262,11 +280,11 @@ for event in range(n_tot):
     n_tag += curr_correct
     n_fake += curr_recs - curr_correct
 
-    fill_histograms(taus, efficiency_pt, efficiency_eta, fake_histo)
+    fill_histograms(taus, efficiency_pt, fake_histo)
 
 # Print out results
 print("Generated taus: ", n_gen)
-print("Reconstructed tau jets", n_rec)
+print("Reconstructed tau jets: ", n_rec)
 print("Correctly tagged taus: ", n_tag)
 print("Efficiency over entire dataset: ", n_tag / n_gen)
 print("Fake rate over entire dataset: ", n_fake / n_rec)
