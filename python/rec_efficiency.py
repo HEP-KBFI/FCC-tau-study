@@ -14,7 +14,6 @@ class EventTauFinder:
             if abs(particle.core.pdgId) == 15 and particle.core.status == 2:
                 self.count += 1
         self.taus = []  # List of taus
-        # self.fakes = []  # List of fake taus
         # Create data objects for storing information about tau jets
         for i in range(self.count):
             self.taus.append(TauJet())
@@ -22,19 +21,10 @@ class EventTauFinder:
         self.__get_gen_taus()
         self.__get_rec_taus()
 
-    # def __len__(self):
-    #     # Return total number of taus
-    #     return len(self.taus)
-    #
-    # def __getitem__(self, item):
-    #     # Return one tau with given index
-    #     return self.taus[item]
-
     def __get_gen_taus(self):
         # Sort through generator level tau and calculate tau jets
         particles = tree.skimmedGenParticles
         neutrinos = []
-        # previous_states = []
         for particle in particles:
             id = particle.core.pdgId
             # Find neutrinos
@@ -46,14 +36,9 @@ class EventTauFinder:
             # Save final state taus
             if particle.core.status == 2:
                 self.__add_tau(particle)
-            # else:
-            #     previous_states.append(particle)
         # Add neutrinos to corresponding taus
         for neutrino in neutrinos:
             self.__add_neutrino(neutrino)
-        # # Add previous states to corresponding taus
-        # for state in previous_states:
-        #     self.__add_states(state)
 
     def __get_rec_taus(self):
         # Sort through reconstructed tau jets
@@ -77,12 +62,6 @@ class EventTauFinder:
             if not obj.gen_neutrino:
                 if obj.match_neutrino(neutrino):
                     break
-
-    # def __add_states(self, state):
-    #     # Save information about generator level tau particle's previous states
-    #     for obj in self.taus:
-    #         if obj.match_previous_states(state):
-    #             break
 
     def __add_reconstruction(self, jet):
         # Match a reconstruction to a generator level tau
@@ -164,16 +143,6 @@ class TauJet:
         self.rec_taujet = taujet
         self.rec_vector = utils.get_lorentz_vector(taujet)
 
-    # def match_previous_states(self, state):
-    #     # Match generator level information about previous states to a tau particle
-    #     if self.gen_tau.core.charge != state.core.charge:
-    #         return False
-    #     deltaR = self.gen_vector.DeltaR(utils.get_lorentz_vector(state))
-    #     if deltaR < 0.05:
-    #         self.previous_states.append(state)
-    #         return True
-    #     return False
-
     def match_reconstruction(self, jet):
         # Match a reconstructed tau jet to a generator level tau
         if self.rec_taujet:
@@ -218,7 +187,7 @@ class TauJet:
         return self.rec_vector.Eta()
 
 
-def fill_histograms(taus, efficiency_pt, fake_histo):
+def fill_histograms(taus, efficiency_pt, fakerate_pt):
     # Fill efficiency histogram
     gen_taus = taus.get_gen_taus()
     for tau in gen_taus:
@@ -228,7 +197,7 @@ def fill_histograms(taus, efficiency_pt, fake_histo):
     # Fill fake rate histogram
     rec_taus = taus.get_rec_taus()
     for tau in rec_taus:
-        fake_histo.Fill(tau.check_fake(), tau.pt())
+        fakerate_pt.Fill(tau.check_fake(), tau.pt())
 
 
 # Files
@@ -236,8 +205,8 @@ inf = TFile('data/delphes_output.root')
 outf = TFile('data/rec_efficiency.root', 'RECREATE')
 
 # Create histograms
-efficiency_pt = TEfficiency('efficiency (pT)', 'efficiency (pT)', 13, 0, 130)
-fake_histo = TEfficiency('fake rate', 'fake rate', 13, 0, 130)
+efficiency_pt = TEfficiency('efficiency', 'efficiency (pT)', 13, 0, 130)
+fakerate_pt = TEfficiency('fake rate', 'fake rate (pT)', 13, 0, 130)
 
 n_tag = 0  # Count of correctly tagged true taus
 n_gen = 0  # Count of true taus
@@ -251,27 +220,6 @@ for event in range(n_tot):
     tree.GetEntry(event)
     taus = EventTauFinder(tree)
 
-    # for tau in taus.taus:
-    # pt = tau.pt()
-    # if pt > 100:
-    #     print("Event ", event + 1)
-    #     tau.printout()
-    #     print("-----------------")
-    #     print()
-    #     if tau.check_reconstructed():
-    #         gen_pt = utils.get_pt(tau.gen_vector)
-    #         if not tau.rec_vector:
-    #             tau.rec_vector = utils.get_lorentz_vector(tau.rec_taujet)
-    #         rec_pt = utils.get_pt(tau.rec_vector)
-    #         diff = rec_pt - gen_pt
-    #         if abs(diff) > 10:
-    #             print("Event ", event + 1)
-    #             print("Generated tau jet Lorentz vector: ")
-    #             utils.print_lorentz_vector(tau.gen_vector)
-    #             print("Reconstructed tau jet Lorentz vector: ")
-    #             utils.print_lorentz_vector(tau.rec_vector)
-    #             print("Delta R = ", tau.gen_vector.DeltaR(tau.rec_vector))
-
     # Count taus
     curr_recs = taus.count_recs()
     curr_correct = taus.count_correct_tag()
@@ -280,7 +228,7 @@ for event in range(n_tot):
     n_tag += curr_correct
     n_fake += curr_recs - curr_correct
 
-    fill_histograms(taus, efficiency_pt, fake_histo)
+    fill_histograms(taus, efficiency_pt, fakerate_pt)
 
 # Print out results
 print("Generated taus: ", n_gen)
