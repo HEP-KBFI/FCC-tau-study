@@ -18,5 +18,5 @@ output="data/p8_output.root"
 log="data/pythia_log.txt"
 n_events="100"
 
-fccrun $options --Filename $card --filename $output -n $n_events > $log
+k4run $options --Filename $card --filename $output -n $n_events > $log
 fi
