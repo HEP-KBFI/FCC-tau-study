@@ -41,14 +41,9 @@ def find_fractions(jetparts):
         else:
             neutral_vectors.append(vectors[i])
 
-    print("Total particles: ", len(vectors))
-    print("Charged particles: ", len(charged_vectors))
-    print("Neutral particles: ", len(neutral_vectors))
-
     vector_sum = utils.add_vectors(vectors)
     if vector_sum:
         total_energy = vector_sum.E()
-        print("Total energy: ", total_energy)
     else:
         return None, None
 
@@ -59,7 +54,6 @@ def find_fractions(jetparts):
     if charged_sum:
         charged_energy = charged_sum.E()
         charged_fraction = charged_energy / total_energy
-        print("Charged energy: ", charged_energy)
     else:
         charged_fraction = None
 
@@ -67,7 +61,6 @@ def find_fractions(jetparts):
     if neutral_sum:
         neutral_energy = neutral_sum.E()
         neutral_fraction = neutral_energy / total_energy
-        print("Neutral energy: ", neutral_energy)
     else:
         neutral_fraction = None
 
@@ -79,12 +72,19 @@ def find_cone_size(jetparts):
     for part in jetparts:
         vectors.append(utils.get_lorentz_vector(part))
     leading_track = find_leading_track(jetparts, vectors)
+    if not leading_track:
+        return None
     cone_size = 0
     for vector in vectors:
         deltaR = leading_track.DeltaR(vector)
         if deltaR > cone_size:
             cone_size = deltaR
     return cone_size
+
+
+def get_eta(jet):
+    vector = utils.get_lorentz_vector(jet)
+    return vector.Eta()
 
 
 # Opening and reading the input file
@@ -94,7 +94,7 @@ n_tot = tree.GetEntries()
 
 # Preparing the output file
 outf = open('data/tau_tagger.csv', 'w')
-fieldnames = ['n_charged', 'n_neutral', 'd_R', 'm', 'charged_fraction', 'neutral_fraction']
+fieldnames = ['n_charged', 'n_neutral', 'd_R', 'm', 'charged_fraction', 'neutral_fraction', 'eta']
 writer = csv.DictWriter(outf, fieldnames=fieldnames)
 writer.writeheader()
 
@@ -103,7 +103,6 @@ for event in range(n_tot):
     tree.GetEntry(event)
     jets = tree.jets
     for i, jet in enumerate(jets):
-        print("Jet ", i + 1)
         jetparts = get_jetparts(tree, jet)
         n_charged = 0
         n_neutral = 0
@@ -121,7 +120,8 @@ for event in range(n_tot):
             'd_R': deltaR,
             'm': mass,
             'charged_fraction': charged_fraction,
-            'neutral_fraction': neutral_fraction
+            'neutral_fraction': neutral_fraction,
+            'eta': get_eta(jet)
         })
 
 outf.close()
