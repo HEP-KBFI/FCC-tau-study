@@ -26,14 +26,25 @@ def get_lorentz_vector_new(particle):
 
 def calculate_mass(particles):
     # Calculate invariant mass
-    vectors = list(particles.values())
+    if type(particles) == dict:
+        vectors = list(particles.values())
+    else:
+        vectors = []
+        for particle in particles:
+            vectors.append(get_lorentz_vector(particle))
+    sum_vector = add_vectors(vectors)
+    mass = sum_vector.M()
+    return mass
+
+
+def add_vectors(vectors):
+    sum_vector = None
     for i, vector in enumerate(vectors):
         if i == 0:
             sum_vector = vector
         else:
             sum_vector += vector
-    mass = sum_vector.M()
-    return mass
+    return sum_vector
 
 
 def check_pt(vector, limit):
