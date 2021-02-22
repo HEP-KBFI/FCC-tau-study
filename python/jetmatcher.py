@@ -16,8 +16,9 @@ class JetMatcher:
         # Create data objects for storing information about tau jets
         for i in range(self.count):
             self.taus.append(Jet())
-        # Find taus
+        # Find generator taus
         self.__get_gen_taus()
+        # Find reconstructed jets
         if jetfilter == 'tautagged':
             self.__get_reco_taus()
         elif jetfilter == 'all':
@@ -91,13 +92,13 @@ class JetMatcher:
                 gen_taus.append(obj)
         return gen_taus
 
-    def get_reco_taus(self):
-        # Return a list of all reconstructed tau jets
-        rec_taus = []
+    def get_reco_jets(self):
+        # Return a list of all reconstructed jets
+        reco_jets = []
         for obj in self.taus:
             if obj.reco_jet:
-                rec_taus.append(obj)
-        return rec_taus
+                reco_jets.append(obj)
+        return reco_jets
 
     def count_gens(self):
         # Return number of generated taus
@@ -130,10 +131,10 @@ class Jet:
         self.gen_tau = None
         self.gen_neutrino = None
         self.gen_vector = None
-        # self.previous_states = []
         # Reconstruction information
         self.reco_jet = None
         self.reco_vector = None
+        self.reco_parts = None
 
     def create_gen_tau(self, tau):
         # Create a generator level tau
@@ -192,6 +193,6 @@ class Jet:
 
     def eta(self):
         # Return the eta of the tau
-        if self.gen_vector:
-            return self.gen_vector.Eta()
-        return self.reco_vector.Eta()
+        if self.reco_jet:
+            return self.reco_vector.Eta()
+        return self.gen_vector.Eta()
