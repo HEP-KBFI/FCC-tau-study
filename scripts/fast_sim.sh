@@ -14,7 +14,7 @@ fi
 
 options="$FCCSW/Sim/SimDelphesInterface/options/PythiaDelphes_config_IDEAtrkCov.py"
 card="cards/Pythia_ee_ZH_Htautau.cmd"
-output="data/delphes_Htautau.root"
+output="data/delphes_output.root"
 log="data/log.txt"
 n_events="1000"
 
