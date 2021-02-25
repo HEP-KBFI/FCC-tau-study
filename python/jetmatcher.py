@@ -179,7 +179,7 @@ class Jet:
         return False
 
     def pt(self):
-        # Return the pT of the tau
+        # Return the pT of the jet
         if self.reco_jet:
             return utils.get_pt(self.reco_vector)
         return utils.get_pt(self.gen_vector)
@@ -191,8 +191,14 @@ class Jet:
         vector = utils.get_lorentz_vector(self.gen_tau)
         return utils.get_pt(vector)
 
+    def mass(self):
+        # Return the mass of the jet
+        if self.reco_jet:
+            return self.reco_vector.M()
+        return self.gen_vector.M()
+
     def eta(self):
-        # Return the eta of the tau
+        # Return the eta of the jet
         if self.reco_jet:
             return self.reco_vector.Eta()
         return self.gen_vector.Eta()

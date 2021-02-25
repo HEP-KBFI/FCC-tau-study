@@ -78,6 +78,11 @@ def find_cone_size(jetparts):
     cone_size = 0
     for vector in vectors:
         deltaR = leading_track.DeltaR(vector)
+
+        # Temporary fix
+        if deltaR > 100:
+            continue
+
         if deltaR > cone_size:
             cone_size = deltaR
     return cone_size
@@ -110,7 +115,8 @@ for event in range(n_tot):
             else:
                 n_neutral += 1
         deltaR = find_cone_size(jetparts)
-        mass = utils.calculate_mass(jetparts)
+        # mass = utils.calculate_mass(jetparts)
+        mass = jet.mass()
         charged_fraction, neutral_fraction = find_fractions(jetparts)
         writer.writerow({
             'n_charged': n_charged,
