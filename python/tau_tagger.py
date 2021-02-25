@@ -89,7 +89,6 @@ tree = inf.Get('events')
 n_tot = tree.GetEntries()
 
 # Preparing the output file
-outf = TFile('data/tau_tagger.csv', 'RECREATE')
 outf = open('data/tau_tagger.csv', 'w')
 fieldnames = ['n_charged', 'n_neutral', 'd_R', 'm', 'charged_fraction', 'neutral_fraction', 'eta', 'truth']
 writer = csv.DictWriter(outf, fieldnames=fieldnames)
